@@ -43,14 +43,25 @@ import AiAssistant from '@/components/AiAssistant';
 
 export default function RootPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [hasHydrated, setHasHydrated] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsLoggedIn(sessionStorage.getItem('tc_logged_in') === 'true');
+    }
+    setHasHydrated(true);
+  }, []);
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const correctPassword = process.env.NEXT_PUBLIC_APP_PASSWORD || 'ferza123';
     if (passwordInput === correctPassword) {
       setIsLoggedIn(true);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('tc_logged_in', 'true');
+      }
       setLoginError('');
     } else {
       setLoginError('Kata sandi salah! Silakan coba lagi.');
@@ -449,6 +460,21 @@ export default function RootPage() {
 
   const openingCompleted = openingList.filter(x => x.checked).length;
   const closingCompleted = closingList.filter(x => x.checked).length;
+
+  if (!hasHydrated) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-slate-950 font-sans p-4 relative overflow-hidden">
+        {/* Decorative background gradients */}
+        <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-blue-700/10 blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-indigo-700/10 blur-[120px]" />
+        
+        <div className="flex flex-col items-center gap-4 relative z-10">
+          <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin" />
+          <p className="text-xs font-bold text-slate-400 tracking-wider uppercase animate-pulse">Memuat Sistem...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
     return (

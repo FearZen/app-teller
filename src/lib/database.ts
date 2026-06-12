@@ -279,7 +279,18 @@ export const db = {
       try {
         const { data, error } = await supabase.from('knowledge_base').select('*');
         if (data && data.length > 0 && !error) {
-          local = data;
+          // Check for any missing default items (e.g. newly added Mandiri articles)
+          const missingDefaults = DEFAULT_KB.filter(def => !data.some(d => d.id === def.id));
+          if (missingDefaults.length > 0) {
+            try {
+              await supabase.from('knowledge_base').upsert(missingDefaults);
+            } catch (e) {
+              console.warn("Failed to auto-sync missing KB defaults to Supabase:", e);
+            }
+            local = [...data, ...missingDefaults];
+          } else {
+            local = data;
+          }
           setLocal(KB_KEY, local);
         } else if (data && data.length === 0) {
           // Seed knowledge base to Supabase

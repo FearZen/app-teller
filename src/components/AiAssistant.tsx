@@ -128,6 +128,48 @@ Ketentuan: **Transfer di bawah Rp100 Juta**
 Durasi: Jam kerja terjadwal (beberapa jam / keesokan hari)`;
     }
 
+    // 6. Kartu Kredit Mandiri pengajuan
+    if (q.includes('kartu kredit') && (q.includes('buka') || q.includes('syarat') || q.includes('daftar') || q.includes('aju') || q.includes('butuh'))) {
+      return `🤖 **Syarat Pengajuan Kartu Kredit Bank Mandiri:**
+1. **Usia:** Utama min. 21 tahun / Tambahan min. 17 tahun.
+2. **Dokumen Identitas:**
+   - **WNI:** KTP Asli & fotokopi.
+   - **WNA:** Paspor & KITAS/KITAP aktif.
+3. **Bukti Pendapatan (Income):**
+   - **Karyawan:** Slip Gaji / Surat Keterangan Penghasilan (SKP) terbaru.
+   - **Profesional / Wiraswasta:** Rekening Koran 3 bulan terakhir & SIUP/Izin Praktek.
+4. **NPWP:** Wajib melampirkan NPWP asli/fotokopi.
+5. **Aplikasi:** Mengisi & menandatangani formulir aplikasi pengajuan.`;
+    }
+
+    // 7. Produk Bank Mandiri umum
+    if (q.includes('produk') && q.includes('mandiri')) {
+      return `🤖 **Produk Utama Bank Mandiri (Layanan Cabang):**
+1. **Tabungan:** Tabungan Rupiah (Utama), Tabungan Now (Digital), Tabungan Bisnis (Usaha), Tabungan Rencana (MTR), Tabungan Valas.
+2. **Kartu Kredit:** Mandiri Signature (Travel), Precious, Skyz Card (Traveler), Shopee Card (Co-branding), Platinum.
+3. **Kredit & Pinjaman:** KPR (Kredit Rumah), KKB (Kendaraan Bermotor), KSM (Kredit Serbaguna Tanpa Agunan).
+4. **Simpanan Berjangka:** Deposito Rupiah & Valas.
+5. **Layanan Digital:** Livin' by Mandiri (Ritel), Kopra by Mandiri (Wholesale/Bisnis).
+6. **Lainnya:** Mandiri Agen (Laku Pandai).`;
+    }
+
+    // 8. KPR Mandiri
+    if (q.includes('kpr') && q.includes('mandiri')) {
+      return `🤖 **Mandiri KPR (Kredit Pemilikan Rumah):**
+Pembiayaan untuk pembelian rumah tinggal, ruko, apartemen, atau renovasi.
+- **Tenor:** Jangka waktu s.d 20 tahun.
+- **Persyaratan:** KTP, KK, NPWP, Slip Gaji/SKP, Rekening Koran 3 bulan, dan dokumen agunan (SHM/SHGB, IMB, PBB).`;
+    }
+
+    // 9. KSM Mandiri
+    if (q.includes('ksm') && q.includes('mandiri')) {
+      return `🤖 **Mandiri KSM (Kredit Serbaguna Mandiri):**
+Fasilitas Kredit Tanpa Agunan (KTA) khusus untuk pegawai payroll Mandiri.
+- **Plafon:** S.d Rp1 Miliar.
+- **Tenor:** Jangka waktu s.d 15 tahun.
+- **Persyaratan:** KTP, NPWP, SK Pengangkatan Pegawai, dan Slip Gaji terbaru.`;
+    }
+
     // Check transactions list
     const matchedTxs = transactions.filter(t => t.code.includes(q) || t.name.toLowerCase().includes(q));
     const matchedKbs = kbArticles.filter(kb => kb.title.toLowerCase().includes(q) || kb.content.toLowerCase().includes(q));
@@ -218,7 +260,7 @@ Durasi: Jam kerja terjadwal (beberapa jam / keesokan hari)`;
             if (e.key === 'Enter') handleSend();
           }}
           placeholder="Tanyakan prosedur, dokumen, atau kode..."
-          className="flex-grow px-4.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-950 dark:text-slate-100 font-semibold text-xs rounded-full outline-none focus:border-blue-500 focus:bg-white transition-all"
+          className="flex-grow px-4.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-955 text-slate-950 dark:text-slate-100 font-semibold text-xs rounded-full outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 transition-all"
         />
         <button
           onClick={handleSend}
