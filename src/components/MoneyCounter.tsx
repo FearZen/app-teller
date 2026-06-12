@@ -61,15 +61,29 @@ export default function MoneyCounter() {
 
   // TAB 4 State: Kas Kecil
   const [tab4Input, setTab4Input] = useState('');
+  const [drawerReserve, setDrawerReserve] = useState(1000000);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem('tc_settings');
+      if (local) {
+        try {
+          const parsed = JSON.parse(local);
+          if (parsed && parsed.drawerReserve) {
+            setDrawerReserve(parsed.drawerReserve);
+          }
+        } catch (e) {}
+      }
+    }
+  }, []);
   
   const getTab4Calculations = () => {
     const total = parseFloat(tab4Input) || 0;
-    const rounded = Math.floor(total / 100) * 100;
-    const sisa = total - rounded;
+    const rounded = Math.round(total / 1000) * 1000;
+    const sisa = Math.abs(total - rounded);
     
-    // Naik Kas = rounded balance above 1,000,000 drawer reserve
-    const reserve = 1000000;
-    const naik = rounded > reserve ? rounded - reserve : 0;
+    // Naik Kas = rounded balance above drawer reserve
+    const naik = rounded > drawerReserve ? rounded - drawerReserve : 0;
     
     return { rounded, sisa, naik };
   };
@@ -262,13 +276,13 @@ export default function MoneyCounter() {
           <div className="flex flex-col">
             <div className="bg-gradient-to-r from-teal-600 to-emerald-700 p-6 text-center text-white">
               <span className="text-[10px] font-bold opacity-80 tracking-wider uppercase block">PEMBULATAN KAS KECIL</span>
-              <h2 className="text-2xl font-extrabold mt-1">Sistem Pecahan Kelipatan Rp100</h2>
+              <h2 className="text-2xl font-extrabold mt-1">Sistem Pecahan Kelipatan Rp1.000</h2>
             </div>
             
             <div className="p-6 max-w-lg mx-auto w-full flex flex-col gap-5">
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">Total Kas Kecil di Sistem</label>
-                <div className="relative flex items-center border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 rounded-xl overflow-hidden focus-within:border-blue-500 focus-within:bg-white transition-all">
+                <div className="relative flex items-center border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 rounded-xl overflow-hidden focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all">
                   <span className="px-4 py-3 bg-slate-100 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-400">Rp</span>
                   <input
                     type="number"
@@ -285,7 +299,7 @@ export default function MoneyCounter() {
                 <div className="flex justify-between items-center px-4 py-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex flex-col">
                     <span className="text-xs font-bold">Nominal Pembulatan</span>
-                    <span className="text-[9px] opacity-75">Dibulatkan ke bawah ke kelipatan Rp100</span>
+                    <span className="text-[9px] opacity-75">Dibulatkan ke ribuan terdekat (Rp1.000)</span>
                   </div>
                   <span className="text-sm font-extrabold">{formatRupiah(tab4Rounded)}</span>
                 </div>
@@ -293,7 +307,7 @@ export default function MoneyCounter() {
                 <div className="flex justify-between items-center px-4 py-3 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex flex-col">
                     <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Nominal Naik Kas</span>
-                    <span className="text-[9px] text-slate-400">Kelebihan kas di atas batas laci Rp1.000.000</span>
+                    <span className="text-[9px] text-slate-400">Kelebihan kas di atas batas laci ({formatRupiah(drawerReserve)})</span>
                   </div>
                   <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{formatRupiah(tab4Naik)}</span>
                 </div>
@@ -301,7 +315,7 @@ export default function MoneyCounter() {
                 <div className="flex justify-between items-center px-4 py-3 text-rose-500 bg-rose-500/5">
                   <div className="flex flex-col">
                     <span className="text-xs font-bold">Nominal Sisa / Selisih</span>
-                    <span className="text-[9px] opacity-75">Sisa pembulatan (Jurnal Kode 0417/0917)</span>
+                    <span className="text-[9px] opacity-75">Selisih pembulatan (Jurnal Kode 0917)</span>
                   </div>
                   <span className="text-sm font-extrabold">{formatRupiah(tab4Sisa)}</span>
                 </div>

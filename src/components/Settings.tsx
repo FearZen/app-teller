@@ -284,7 +284,7 @@ export default function Settings({
         <div className="flex flex-col md:flex-row items-end gap-4 max-w-md">
           <div className="flex flex-col gap-1.5 flex-grow">
             <label className="text-[10px] font-bold text-slate-400 uppercase">Nama Pengguna (Teller ID)</label>
-            <div className="relative flex items-center border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 rounded-xl overflow-hidden focus-within:border-blue-500 focus-within:bg-white transition-all">
+            <div className="relative flex items-center border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 rounded-xl overflow-hidden focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all">
               <User className="absolute left-4.5 text-slate-400 h-4.5 w-4.5" />
               <input
                 type="text"
