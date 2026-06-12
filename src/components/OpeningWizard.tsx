@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Check, HelpCircle, Lock, RefreshCw, GripVertical } from 'lucide-react';
+import { Check, HelpCircle, Lock, RefreshCw, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import { ChecklistItem } from '@/types';
 
 interface OpeningWizardProps {
@@ -22,6 +22,8 @@ export default function OpeningWizard({
   const progress = checkedCount / checklist.length;
 
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+  const [touchStartIndex, setTouchStartIndex] = useState<number | null>(null);
+  const [touchTargetIndex, setTouchTargetIndex] = useState<number | null>(null);
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedItemIndex(index);
@@ -43,6 +45,59 @@ export default function OpeningWizard({
 
     onReorder(newList);
     setDraggedItemIndex(null);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent, index: number) => {
+    setTouchStartIndex(index);
+    setTouchTargetIndex(index);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartIndex === null) return;
+    const touch = e.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (!element) return;
+
+    const stepEl = element.closest('[data-index]');
+    if (stepEl) {
+      const idxAttr = stepEl.getAttribute('data-index');
+      if (idxAttr !== null) {
+        const idx = parseInt(idxAttr, 10);
+        if (idx !== touchTargetIndex) {
+          setTouchTargetIndex(idx);
+        }
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartIndex !== null && touchTargetIndex !== null && touchStartIndex !== touchTargetIndex) {
+      const newList = [...checklist];
+      const draggedItem = newList[touchStartIndex];
+      newList.splice(touchStartIndex, 1);
+      newList.splice(touchTargetIndex, 0, draggedItem);
+      onReorder(newList);
+    }
+    setTouchStartIndex(null);
+    setTouchTargetIndex(null);
+  };
+
+  const handleMoveUp = (index: number) => {
+    if (index === 0) return;
+    const newList = [...checklist];
+    const item = newList[index];
+    newList.splice(index, 1);
+    newList.splice(index - 1, 0, item);
+    onReorder(newList);
+  };
+
+  const handleMoveDown = (index: number) => {
+    if (index === checklist.length - 1) return;
+    const newList = [...checklist];
+    const item = newList[index];
+    newList.splice(index, 1);
+    newList.splice(index + 1, 0, item);
+    onReorder(newList);
   };
 
   return (
@@ -93,6 +148,7 @@ export default function OpeningWizard({
           return (
             <div
               key={step.id}
+              data-index={index}
               draggable
               onDragStart={(e) => handleDragStart(e, index)}
               onDragOver={(e) => handleDragOver(e, index)}
@@ -103,15 +159,42 @@ export default function OpeningWizard({
                   : isEnabled
                     ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 hover:shadow-sm'
                     : 'bg-slate-50 dark:bg-slate-950 border-slate-200/40 dark:border-slate-900/60 opacity-50'
-              } ${draggedItemIndex === index ? 'opacity-30 border-dashed border-blue-500' : ''}`}
+              } ${draggedItemIndex === index ? 'opacity-30 border-dashed border-blue-500' : ''} ${
+                touchStartIndex !== null && touchTargetIndex === index && touchStartIndex !== index
+                  ? 'border-dashed border-blue-550 bg-blue-50/40 dark:bg-blue-950/20'
+                  : ''
+              }`}
             >
-              <div className="flex items-start md:items-center gap-3">
-                {/* Drag handle */}
-                <div 
-                  className="cursor-grab active:cursor-grabbing p-1 text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 self-center"
-                  title="Seret untuk mengubah urutan"
-                >
-                  <GripVertical className="h-4.5 w-4.5" />
+              <div className="flex items-start md:items-center gap-3 w-full md:w-auto">
+                {/* Drag handle & Mobile buttons */}
+                <div className="flex items-center gap-2 self-stretch md:self-center">
+                  <div 
+                    className="cursor-grab active:cursor-grabbing p-2 text-slate-400 dark:text-slate-650 hover:text-slate-600 dark:hover:text-slate-350 touch-none"
+                    title="Seret untuk mengubah urutan (bisa disentuh)"
+                    onTouchStart={(e) => handleTouchStart(e, index)}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                  >
+                    <GripVertical className="h-5 w-5" />
+                  </div>
+                  <div className="flex flex-row md:flex-col items-center bg-slate-100/60 dark:bg-slate-800/60 rounded-xl p-0.5 border border-slate-200/40 dark:border-slate-700/40">
+                    <button 
+                      onClick={() => handleMoveUp(index)} 
+                      disabled={index === 0}
+                      className="p-2 md:p-1 hover:bg-white dark:hover:bg-slate-900 rounded-lg text-slate-450 hover:text-slate-700 dark:hover:text-slate-200 disabled:opacity-20 disabled:hover:bg-transparent cursor-pointer transition-colors"
+                      title="Pindahkan Ke Atas"
+                    >
+                      <ChevronUp className="h-5 w-5 md:h-4 w-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleMoveDown(index)} 
+                      disabled={index === checklist.length - 1}
+                      className="p-2 md:p-1 hover:bg-white dark:hover:bg-slate-900 rounded-lg text-slate-450 hover:text-slate-700 dark:hover:text-slate-200 disabled:opacity-20 disabled:hover:bg-transparent cursor-pointer transition-colors"
+                      title="Pindahkan Ke Bawah"
+                    >
+                      <ChevronDown className="h-5 w-5 md:h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex items-start md:items-center gap-4.5">

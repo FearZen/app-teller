@@ -110,12 +110,35 @@ export const db = {
   // --- OPENING CHECKLIST ---
   async getOpeningChecklist(): Promise<ChecklistItem[]> {
     let local = getLocal<ChecklistItem[]>(OPENING_CHECKLIST_KEY, DEFAULT_OPENING_CHECKLIST);
+    
+    // Ensure orderIndex exists on local items
+    let needsUpdate = false;
+    local = local.map((item, idx) => {
+      if (item.orderIndex === undefined) {
+        needsUpdate = true;
+        return { ...item, orderIndex: idx };
+      }
+      return item;
+    });
+    if (needsUpdate) {
+      setLocal(OPENING_CHECKLIST_KEY, local);
+    }
+
     if (supabase) {
       try {
         const { data, error } = await supabase.from('opening_checklists').select('*');
         if (data && data.length > 0 && !error) {
-          // Sort to match order
-          local = data.sort((a, b) => a.id.localeCompare(b.id));
+          // Sort by orderIndex, fallback to natural numeric ID sort if orderIndex is same
+          local = data.sort((a, b) => {
+            const idxA = a.orderIndex ?? 0;
+            const idxB = b.orderIndex ?? 0;
+            if (idxA !== idxB) {
+              return idxA - idxB;
+            }
+            const numA = parseInt(a.id.replace(/^\D+/g, ''), 10) || 0;
+            const numB = parseInt(b.id.replace(/^\D+/g, ''), 10) || 0;
+            return numA - numB;
+          });
           setLocal(OPENING_CHECKLIST_KEY, local);
         } else if (data && data.length === 0) {
           // Seed opening checklist to Supabase
@@ -142,11 +165,35 @@ export const db = {
   // --- CLOSING CHECKLIST ---
   async getClosingChecklist(): Promise<ChecklistItem[]> {
     let local = getLocal<ChecklistItem[]>(CLOSING_CHECKLIST_KEY, DEFAULT_CLOSING_CHECKLIST);
+    
+    // Ensure orderIndex exists on local items
+    let needsUpdate = false;
+    local = local.map((item, idx) => {
+      if (item.orderIndex === undefined) {
+        needsUpdate = true;
+        return { ...item, orderIndex: idx };
+      }
+      return item;
+    });
+    if (needsUpdate) {
+      setLocal(CLOSING_CHECKLIST_KEY, local);
+    }
+
     if (supabase) {
       try {
         const { data, error } = await supabase.from('closing_checklists').select('*');
         if (data && data.length > 0 && !error) {
-          local = data.sort((a, b) => a.id.localeCompare(b.id));
+          // Sort by orderIndex, fallback to natural numeric ID sort if orderIndex is same
+          local = data.sort((a, b) => {
+            const idxA = a.orderIndex ?? 0;
+            const idxB = b.orderIndex ?? 0;
+            if (idxA !== idxB) {
+              return idxA - idxB;
+            }
+            const numA = parseInt(a.id.replace(/^\D+/g, ''), 10) || 0;
+            const numB = parseInt(b.id.replace(/^\D+/g, ''), 10) || 0;
+            return numA - numB;
+          });
           setLocal(CLOSING_CHECKLIST_KEY, local);
         } else if (data && data.length === 0) {
           // Seed closing checklist to Supabase

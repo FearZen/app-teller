@@ -286,13 +286,15 @@ export default function RootPage() {
   }, [closingList]);
 
   const handleReorderOpening = useCallback((newList: ChecklistItem[]) => {
-    setOpeningList(newList);
-    db.saveOpeningChecklist(newList);
+    const updated = newList.map((item, idx) => ({ ...item, orderIndex: idx }));
+    setOpeningList(updated);
+    db.saveOpeningChecklist(updated);
   }, []);
 
   const handleReorderClosing = useCallback((newList: ChecklistItem[]) => {
-    setClosingList(newList);
-    db.saveClosingChecklist(newList);
+    const updated = newList.map((item, idx) => ({ ...item, orderIndex: idx }));
+    setClosingList(updated);
+    db.saveClosingChecklist(updated);
   }, []);
 
   // Dashboard reminders

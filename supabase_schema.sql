@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS public.opening_checklists (
     note TEXT,
     warning TEXT,
     type TEXT,
+    "orderIndex" INTEGER DEFAULT 0 NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -65,6 +66,7 @@ CREATE TABLE IF NOT EXISTS public.closing_checklists (
     note TEXT,
     warning TEXT,
     type TEXT,
+    "orderIndex" INTEGER DEFAULT 0 NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

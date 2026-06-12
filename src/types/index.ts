@@ -31,6 +31,7 @@ export interface ChecklistItem {
   note?: string;
   warning?: string;
   type?: string;
+  orderIndex?: number;
 }
 
 export interface TellerSettings {
