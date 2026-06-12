@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { TransactionCode, KbArticle, DailyNote, ChecklistItem, TellerSettings } from '@/types';
+import { TransactionCode, KbArticle, DailyNote, ChecklistItem, TellerSettings, KlopLog } from '@/types';
 import { DEFAULT_TRANSACTIONS, DEFAULT_KB, DEFAULT_OPENING_CHECKLIST, DEFAULT_CLOSING_CHECKLIST, DEFAULT_REMINDERS } from './constants';
 
 const SETTINGS_KEY = 'tc_settings';
@@ -9,6 +9,7 @@ const DAILY_NOTES_KEY = 'tc_daily_notes';
 const OPENING_CHECKLIST_KEY = 'tc_opening_checklist';
 const CLOSING_CHECKLIST_KEY = 'tc_closing_checklist';
 const REMINDERS_KEY = 'tc_reminders';
+const KLOP_LOGS_KEY = 'tc_klop_logs';
 
 // Safe localStorage helper
 const isClient = typeof window !== 'undefined';
@@ -384,6 +385,78 @@ export const db = {
         await supabase.from('daily_notes').delete().eq('id', id);
       } catch (e) {
         console.warn("Supabase note delete failed:", e);
+      }
+    }
+  },
+
+  // --- KLOP LOGS ---
+  async getKlopLogs(): Promise<KlopLog[]> {
+    let local = getLocal<KlopLog[]>(KLOP_LOGS_KEY, []);
+    if (supabase) {
+      try {
+        const { data, error } = await supabase.from('klop_logs').select('*');
+        if (data && data.length > 0 && !error) {
+          local = data.map(d => ({
+            id: d.id,
+            timestamp: d.timestamp,
+            systemCash: Number(d.system_cash),
+            physicalCash: Number(d.physical_cash),
+            difference: Number(d.difference),
+            status: d.status as 'klop' | 'selisih'
+          })).sort((a, b) => b.id.localeCompare(a.id));
+          setLocal(KLOP_LOGS_KEY, local);
+        } else if (data && data.length === 0 && local.length > 0) {
+          const payload = local.map(l => ({
+            id: l.id,
+            timestamp: l.timestamp,
+            system_cash: l.systemCash,
+            physical_cash: l.physicalCash,
+            difference: l.difference,
+            status: l.status
+          }));
+          await supabase.from('klop_logs').upsert(payload);
+        }
+      } catch (e) {
+        console.warn("Supabase klop_logs fetch failed. Fallback to localStorage:", e);
+      }
+    }
+    return local;
+  },
+
+  async saveKlopLogs(list: KlopLog[]): Promise<void> {
+    setLocal(KLOP_LOGS_KEY, list);
+    if (supabase) {
+      try {
+        const payload = list.map(l => ({
+          id: l.id,
+          timestamp: l.timestamp,
+          system_cash: l.systemCash,
+          physical_cash: l.physicalCash,
+          difference: l.difference,
+          status: l.status
+        }));
+        await supabase.from('klop_logs').upsert(payload);
+      } catch (e) {
+        console.warn("Supabase klop_logs save failed:", e);
+      }
+    }
+  },
+
+  async addKlopLog(log: KlopLog): Promise<void> {
+    const list = await this.getKlopLogs();
+    list.unshift(log);
+    await this.saveKlopLogs(list);
+  },
+
+  async deleteKlopLog(id: string): Promise<void> {
+    let list = await this.getKlopLogs();
+    list = list.filter(l => l.id !== id);
+    await this.saveKlopLogs(list);
+    if (supabase) {
+      try {
+        await supabase.from('klop_logs').delete().eq('id', id);
+      } catch (e) {
+        console.warn("Supabase klop log delete failed:", e);
       }
     }
   }

@@ -95,3 +95,17 @@ CREATE TABLE IF NOT EXISTS public.reminders (
 
 ALTER TABLE public.reminders ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow full access to all" ON public.reminders FOR ALL USING (true) WITH CHECK (true);
+
+-- 8. Create Klop Logs Table (Periodic Cash Reconciliations)
+CREATE TABLE IF NOT EXISTS public.klop_logs (
+    id TEXT PRIMARY KEY,
+    timestamp TEXT NOT NULL,
+    system_cash NUMERIC NOT NULL,
+    physical_cash NUMERIC NOT NULL,
+    difference NUMERIC NOT NULL,
+    status TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.klop_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow full access to all" ON public.klop_logs FOR ALL USING (true) WITH CHECK (true);

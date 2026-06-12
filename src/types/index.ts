@@ -39,3 +39,12 @@ export interface TellerSettings {
   username: string;
   drawerReserve: number;
 }
+
+export interface KlopLog {
+  id: string;
+  timestamp: string;
+  systemCash: number;
+  physicalCash: number;
+  difference: number;
+  status: 'klop' | 'selisih';
+}

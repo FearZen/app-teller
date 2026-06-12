@@ -1,10 +1,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Coins, Trash2, ShieldCheck, Scale, AlertOctagon } from 'lucide-react';
+import { Coins, Trash2, ShieldCheck, Scale, AlertOctagon, History } from 'lucide-react';
+import { KlopLog } from '@/types';
 
-export default function MoneyCounter() {
-  const [activeTab, setActiveTab] = useState<'pecahan' | '50k' | 'kas-naik' | 'kas-kecil'>('pecahan');
+interface MoneyCounterProps {
+  klopLogs?: KlopLog[];
+  addKlopLog?: (log: KlopLog) => Promise<void>;
+  deleteKlopLog?: (id: string) => Promise<void>;
+}
+
+export default function MoneyCounter({
+  klopLogs = [],
+  addKlopLog,
+  deleteKlopLog
+}: MoneyCounterProps) {
+  const [activeTab, setActiveTab] = useState<'pecahan' | '50k' | 'kas-naik' | 'kas-kecil' | 'klop-kas'>('pecahan');
   const currencyFormatter = new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
@@ -90,6 +101,31 @@ export default function MoneyCounter() {
 
   const { rounded: tab4Rounded, sisa: tab4Sisa, naik: tab4Naik } = getTab4Calculations();
 
+  // TAB 5 State: Klop Kas Berkala
+  const [systemInput, setSystemInput] = useState('');
+  const [physicalInput, setPhysicalInput] = useState('');
+
+  const systemCashVal = parseFloat(systemInput) || 0;
+  const physicalCashVal = parseFloat(physicalInput) || 0;
+  const difference = physicalCashVal - systemCashVal;
+
+  const handleSaveLog = () => {
+    if (!systemInput || !physicalInput || !addKlopLog) return;
+    const now = new Date();
+    const formattedTime = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' (' + now.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) + ')';
+    const log: KlopLog = {
+      id: Date.now().toString(),
+      timestamp: formattedTime,
+      systemCash: systemCashVal,
+      physicalCash: physicalCashVal,
+      difference: difference,
+      status: difference === 0 ? 'klop' : 'selisih'
+    };
+    addKlopLog(log);
+    setSystemInput('');
+    setPhysicalInput('');
+  };
+
   return (
     <div className="flex flex-col gap-6">
       {/* Tab Selectors */}
@@ -133,6 +169,16 @@ export default function MoneyCounter() {
           }`}
         >
           Kas Kecil & Pembulatan
+        </button>
+        <button
+          onClick={() => setActiveTab('klop-kas')}
+          className={`px-5 py-3 text-xs font-bold tracking-wide uppercase border-b-2 transition-all cursor-pointer ${
+            activeTab === 'klop-kas'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-extrabold'
+              : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+          }`}
+        >
+          Klop Kas Berkala
         </button>
       </div>
 
@@ -319,6 +365,171 @@ export default function MoneyCounter() {
                   </div>
                   <span className="text-sm font-extrabold">{formatRupiah(tab4Sisa)}</span>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: Klop Kas Berkala */}
+        {activeTab === 'klop-kas' && (
+          <div className="flex flex-col animate-in fade-in duration-200">
+            <div className="bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-700 p-6 text-center text-white">
+              <span className="text-[10px] font-bold opacity-80 tracking-wider uppercase block">Rekonsiliasi Kas Berkala</span>
+              <h2 className="text-2xl font-extrabold mt-1">Verifikasi &amp; Klop Laci Kas</h2>
+            </div>
+            
+            <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Left Column: Input Form */}
+              <div className="lg:col-span-5 flex flex-col gap-5">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  Form Cek Kas
+                </h3>
+                
+                {/* System Cash Input */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Total Kas di Sistem (Rp)</label>
+                  <div className="relative flex items-center border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 rounded-xl overflow-hidden focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all">
+                    <span className="px-4 py-3 bg-slate-100 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-400">Rp</span>
+                    <input
+                      type="number"
+                      value={systemInput}
+                      onChange={(e) => setSystemInput(e.target.value)}
+                      placeholder="Masukkan nominal sistem"
+                      className="w-full px-4 py-3 bg-transparent text-slate-900 dark:text-slate-100 font-bold text-sm outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Physical Cash Input */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Total Kas Fisik di Laci (Rp)</label>
+                  <div className="relative flex items-center border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 rounded-xl overflow-hidden focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all">
+                    <span className="px-4 py-3 bg-slate-100 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-400">Rp</span>
+                    <input
+                      type="number"
+                      value={physicalInput}
+                      onChange={(e) => setPhysicalInput(e.target.value)}
+                      placeholder="Masukkan nominal fisik laci"
+                      className="w-full px-4 py-3 bg-transparent text-slate-900 dark:text-slate-100 font-bold text-sm outline-none"
+                    />
+                  </div>
+                  
+                  {/* Autofill from calculator shortcut */}
+                  {tab1Total > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setPhysicalInput(tab1Total.toString())}
+                      className="text-left text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer transition-all mt-1"
+                    >
+                      💡 Gunakan hasil hitung Kalkulator Pecahan ({formatRupiah(tab1Total)})
+                    </button>
+                  )}
+                </div>
+
+                {/* Live Check Status Indicator */}
+                {(systemInput || physicalInput) && (
+                  <div className={`p-4 rounded-xl border flex flex-col gap-1 transition-all ${
+                    difference === 0
+                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400'
+                  }`}>
+                    <div className="flex items-center gap-2 font-bold text-xs">
+                      {difference === 0 ? (
+                        <>
+                          <ShieldCheck className="h-4 w-4" />
+                          <span>✓ KAS KLOP / PAS</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertOctagon className="h-4 w-4" />
+                          <span>⚠️ ADA SELISIH KAS</span>
+                        </>
+                      )}
+                    </div>
+                    <div className="text-[11px] opacity-90 mt-1">
+                      {difference === 0 ? (
+                        <span>Kas sistem dan fisik laci klop sempurna.</span>
+                      ) : (
+                        <span>
+                          Selisih sebesar <strong>{formatRupiah(Math.abs(difference))}</strong> (
+                          {difference > 0 ? 'Fisik Lebih Banyak / Selisih Lebih' : 'Fisik Lebih Sedikit / Selisih Kurang'}
+                          ).
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Save Log Button */}
+                <button
+                  type="button"
+                  onClick={handleSaveLog}
+                  disabled={!systemInput || !physicalInput}
+                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-900/10 hover:shadow-lg transition-all cursor-pointer text-center"
+                >
+                  Simpan Log Rekonsiliasi
+                </button>
+              </div>
+
+              {/* Right Column: Log Timeline List */}
+              <div className="lg:col-span-7 flex flex-col gap-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
+                  <History className="h-4 w-4" />
+                  <span>Riwayat Cek Hari Ini</span>
+                </h3>
+
+                {klopLogs.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center gap-3">
+                    <Scale className="h-8 w-8 text-slate-300 dark:text-slate-700 animate-pulse" />
+                    <div className="flex flex-col gap-1">
+                      <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Belum ada riwayat check</p>
+                      <p className="text-[10px] text-slate-400 max-w-[240px]">
+                        Lakukan rekonsiliasi kas berkala setiap 1-2 jam untuk meminimalkan risiko selisih di akhir hari.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border border-slate-200 dark:border-slate-800/80 rounded-2xl overflow-hidden bg-slate-50/20 dark:bg-slate-900/10">
+                    <div className="max-h-[350px] overflow-y-auto divide-y divide-slate-150 dark:divide-slate-800/60">
+                      {klopLogs.map((log) => {
+                        const isKlop = log.status === 'klop';
+                        return (
+                          <div key={log.id} className="p-3.5 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{log.timestamp}</span>
+                                <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${
+                                  isKlop
+                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                                }`}>
+                                  {isKlop ? 'KLOP' : 'SELISIH'}
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-slate-500 dark:text-slate-400 flex flex-wrap gap-x-3 gap-y-1 mt-0.5">
+                                <span>Sistem: <strong className="text-slate-700 dark:text-slate-300">{formatRupiah(log.systemCash)}</strong></span>
+                                <span>Fisik: <strong className="text-slate-700 dark:text-slate-300">{formatRupiah(log.physicalCash)}</strong></span>
+                                {log.difference !== 0 && (
+                                  <span className={log.difference > 0 ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-rose-600 dark:text-rose-400 font-semibold'}>
+                                    Selisih: {log.difference > 0 ? '+' : ''}{formatRupiah(log.difference)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => deleteKlopLog && deleteKlopLog(log.id)}
+                              className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition cursor-pointer"
+                              title="Hapus Log"
+                            >
+                              <Trash2 className="h-4.5 w-4.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

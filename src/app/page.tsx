@@ -22,7 +22,7 @@ import {
   X
 } from 'lucide-react';
 
-import { TransactionCode, KbArticle, DailyNote, ChecklistItem, TellerSettings } from '@/types';
+import { TransactionCode, KbArticle, DailyNote, ChecklistItem, TellerSettings, KlopLog } from '@/types';
 import { db } from '@/lib/database';
 import { supabase } from '@/lib/supabase';
 
@@ -82,6 +82,7 @@ export default function RootPage() {
   const [openingList, setOpeningList] = useState<ChecklistItem[]>([]);
   const [closingList, setClosingList] = useState<ChecklistItem[]>([]);
   const [reminders, setReminders] = useState<ChecklistItem[]>([]);
+  const [klopLogs, setKlopLogs] = useState<KlopLog[]>([]);
   
   // Settings & Reconciliations
   const [settings, setSettings] = useState<TellerSettings>({ darkMode: false, username: 'Yang Mulia Ferza', drawerReserve: 1000000 });
@@ -131,6 +132,9 @@ export default function RootPage() {
 
       const dbReminders = await db.getReminders();
       setReminders(dbReminders);
+
+      const dbKlop = await db.getKlopLogs();
+      setKlopLogs(dbKlop);
 
       // Determine starting status based on wizards completion
       const opComplete = dbOpening.every(x => x.checked);
@@ -371,6 +375,19 @@ export default function RootPage() {
     setTransactions(dbTxs);
   }, []);
 
+  // Klop logs CRUD
+  const handleAddKlopLog = useCallback(async (log: KlopLog) => {
+    await db.addKlopLog(log);
+    const dbKlop = await db.getKlopLogs();
+    setKlopLogs(dbKlop);
+  }, []);
+
+  const handleDeleteKlopLog = useCallback(async (id: string) => {
+    await db.deleteKlopLog(id);
+    const dbKlop = await db.getKlopLogs();
+    setKlopLogs(dbKlop);
+  }, []);
+
   // Backup & Restore
   const handleExportBackup = useCallback(() => {
     const payload = {
@@ -378,10 +395,11 @@ export default function RootPage() {
       kbArticles,
       status,
       settings,
-      reminders
+      reminders,
+      klopLogs
     };
     return btoa(JSON.stringify(payload));
-  }, [dailyNotes, kbArticles, status, settings, reminders]);
+  }, [dailyNotes, kbArticles, status, settings, reminders, klopLogs]);
 
   const handleImportBackup = useCallback((b64Str: string) => {
     try {
@@ -404,6 +422,10 @@ export default function RootPage() {
         if (parsed.reminders) {
           setReminders(parsed.reminders);
           db.saveReminders(parsed.reminders);
+        }
+        if (parsed.klopLogs) {
+          setKlopLogs(parsed.klopLogs);
+          db.saveKlopLogs(parsed.klopLogs);
         }
         if (parsed.status) {
           setStatus(parsed.status);
@@ -640,7 +662,13 @@ export default function RootPage() {
 
             {activeTab === 'doc-checker' && <DocChecker />}
 
-            {activeTab === 'money-counter' && <MoneyCounter />}
+            {activeTab === 'money-counter' && (
+              <MoneyCounter
+                klopLogs={klopLogs}
+                addKlopLog={handleAddKlopLog}
+                deleteKlopLog={handleDeleteKlopLog}
+              />
+            )}
 
             {activeTab === 'closing' && (
               <ClosingWizard
@@ -690,6 +718,7 @@ export default function RootPage() {
                 exportBackup={handleExportBackup}
                 openingList={openingList}
                 closingList={closingList}
+                klopLogs={klopLogs}
               />
             )}
           </div>

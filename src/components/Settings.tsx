@@ -17,7 +17,7 @@ import {
   RefreshCcw,
   CheckCircle2
 } from 'lucide-react';
-import { ChecklistItem, TellerSettings, DailyNote, KbArticle } from '@/types';
+import { ChecklistItem, TellerSettings, DailyNote, KbArticle, KlopLog } from '@/types';
 
 interface SettingsProps {
   settings: TellerSettings;
@@ -29,6 +29,7 @@ interface SettingsProps {
   exportBackup: () => string;
   openingList?: ChecklistItem[];
   closingList?: ChecklistItem[];
+  klopLogs?: KlopLog[];
 }
 
 export default function Settings({
@@ -40,7 +41,8 @@ export default function Settings({
   importBackup,
   exportBackup,
   openingList = [],
-  closingList = []
+  closingList = [],
+  klopLogs = []
 }: SettingsProps) {
 
   const [activeSubTab, setActiveSubTab] = useState<'backup' | 'restore'>('backup');
@@ -224,6 +226,40 @@ export default function Settings({
                             <td><span class="badge \${item.checked ? 'badge-done' : 'badge-todo'}">\${item.checked ? 'SELESAI' : 'BELUM'}</span></td>
                           </tr>
                         \`).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div class="section">
+                    <h2>Riwayat Rekonsiliasi Kas Berkala (\${klopLogs.length})</h2>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th style="width: 20%">Waktu Check</th>
+                          <th style="width: 25%">Kas Sistem</th>
+                          <th style="width: 25%">Kas Fisik Laci</th>
+                          <th style="width: 15%">Selisih</th>
+                          <th style="width: 15%">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        \${klopLogs.length === 0 ? \`<tr><td colspan="5" style="text-align: center; color: #94a3b8;">Belum ada check klop kas hari ini</td></tr>\` : 
+                          klopLogs.map(log => {
+                            const diffValue = log.difference;
+                            const diffText = diffValue === 0 ? 'Rp0' : (diffValue > 0 ? '+' : '') + new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(diffValue).replace(/,00\$/, '');
+                            const statusColor = log.status === 'klop' ? 'badge-done' : 'badge-todo';
+                            const statusLabel = log.status === 'klop' ? 'KLOP' : 'SELISIH';
+                            return \`
+                              <tr>
+                                <td>\${log.timestamp}</td>
+                                <td>\${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(log.systemCash).replace(/,00\$/, '')}</td>
+                                <td>\${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(log.physicalCash).replace(/,00\$/, '')}</td>
+                                <td style="font-weight: bold; color: \${diffValue === 0 ? '#10b981' : '#ef4444'};">\${diffText}</td>
+                                <td><span class="badge \${statusColor}">\${statusLabel}</span></td>
+                              </tr>
+                            \`;
+                          }).join('')
+                        }
                       </tbody>
                     </table>
                   </div>
