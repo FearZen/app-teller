@@ -28,6 +28,8 @@ interface SidebarProps {
   darkMode: boolean;
   setDarkMode: (val: boolean) => void;
   isCloudConnected?: boolean;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export default function Sidebar({
@@ -37,7 +39,9 @@ export default function Sidebar({
   username,
   darkMode,
   setDarkMode,
-  isCloudConnected = false
+  isCloudConnected = false,
+  isOpen = false,
+  onClose
 }: SidebarProps) {
   
   const menuItems = [
@@ -69,7 +73,18 @@ export default function Sidebar({
   const statusInfo = getStatusDetails();
 
   return (
-    <aside className="w-72 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 flex flex-col flex-shrink-0 border-r border-slate-200 dark:border-slate-800 z-10 transition-all duration-300">
+    <>
+      {/* Backdrop overlay for mobile screen */}
+      {isOpen && (
+        <div 
+          onClick={onClose}
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-30 lg:hidden cursor-pointer animate-in fade-in duration-200"
+        />
+      )}
+
+      <aside className={`fixed inset-y-0 left-0 lg:static w-72 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 flex flex-col flex-shrink-0 border-r border-slate-200 dark:border-slate-800 z-40 lg:z-10 transition-all duration-300 transform ${
+        isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}>
       {/* Brand Header */}
       <div className="p-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800/60">
         <ShieldCheck className="h-8 w-8 text-blue-600 dark:text-blue-500" />
@@ -98,7 +113,10 @@ export default function Sidebar({
           return (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                setActiveTab(item.id);
+                if (onClose) onClose();
+              }}
               className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 text-left ${
                 isActive
                   ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-900/10'
@@ -148,5 +166,6 @@ export default function Sidebar({
         </button>
       </div>
     </aside>
+    </>
   );
 }

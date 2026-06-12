@@ -74,6 +74,7 @@ export default function RootPage() {
   // Real-time Clock
   const [timeStr, setTimeStr] = useState('');
   const [dateStr, setDateStr] = useState('');
+  const [shortDateStr, setShortDateStr] = useState('');
 
   // Core Database lists
   const [transactions, setTransactions] = useState<TransactionCode[]>([]);
@@ -92,6 +93,7 @@ export default function RootPage() {
   // Overlays
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [isKeyboardHelpOpen, setIsKeyboardHelpOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchInitialFocus, setSearchInitialFocus] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -168,6 +170,11 @@ export default function RootPage() {
         day: 'numeric',
         month: 'long',
         year: 'numeric'
+      }).format(now));
+
+      setShortDateStr(new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric',
+        month: 'short'
       }).format(now));
     };
 
@@ -574,49 +581,60 @@ export default function RootPage() {
         darkMode={settings.darkMode}
         setDarkMode={(val) => handleSaveSettings({ ...settings, darkMode: val })}
         isCloudConnected={!!supabase}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
 
       {/* Main Workspace */}
       <div className="flex-grow flex flex-col h-full overflow-hidden">
         
         {/* Header Bar */}
-        <header className="h-[70px] bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800/80 px-8 flex items-center justify-between shrink-0">
-          <h1 className="font-extrabold text-slate-800 dark:text-white text-lg tracking-tight">
-            {getHeaderTitle()}
-          </h1>
+        <header className="h-[70px] bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800/80 px-4 md:px-8 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer transition"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <h1 className="font-extrabold text-slate-800 dark:text-white text-base md:text-lg tracking-tight truncate max-w-[180px] sm:max-w-[280px] md:max-w-none">
+              {getHeaderTitle()}
+            </h1>
+          </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {/* Clock Widget */}
-            <div className="flex items-center gap-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-800/60 px-4 py-2 rounded-xl">
+            <div className="flex items-center gap-1.5 sm:gap-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-800/60 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl">
               <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
               <div className="flex flex-col">
-                <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">{timeStr}</span>
-                <span className="text-[9px] font-bold text-slate-400">{dateStr}</span>
+                <span className="font-mono text-[10px] sm:text-xs font-bold text-blue-600 dark:text-blue-400">{timeStr}</span>
+                <span className="hidden sm:block text-[9px] font-bold text-slate-400">{dateStr}</span>
+                <span className="block sm:hidden text-[9px] font-bold text-slate-400">{shortDateStr}</span>
               </div>
             </div>
 
             {/* Keyboard Help widget */}
             <button
               onClick={() => setIsKeyboardHelpOpen(true)}
-              className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl cursor-pointer transition shadow-sm"
+              className="p-2 sm:p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl cursor-pointer transition shadow-sm"
               title="Shortcut Keyboard"
             >
-              <Keyboard className="h-4.5 w-4.5" />
+              <Keyboard className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
             </button>
 
             {/* AI Assistant button */}
             <button
               onClick={() => setIsAiOpen(true)}
-              className="flex items-center gap-1.5 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-900/10 hover:shadow-lg cursor-pointer transition"
+              className="flex items-center gap-1.5 px-3 py-2 sm:px-4.5 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-900/10 hover:shadow-lg cursor-pointer transition"
             >
               <Bot className="h-4 w-4" />
-              <span>Tanya AI</span>
+              <span className="hidden sm:inline">Tanya AI</span>
             </button>
           </div>
         </header>
 
         {/* Scrollable View Area */}
-        <main className="flex-grow overflow-y-auto p-6 md:p-8">
+        <main className="flex-grow overflow-y-auto p-4 md:p-8">
           <div className="max-w-6xl mx-auto">
             {activeTab === 'dashboard' && (
               <Dashboard
