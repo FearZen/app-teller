@@ -27,6 +27,7 @@ interface SidebarProps {
   username: string;
   darkMode: boolean;
   setDarkMode: (val: boolean) => void;
+  isCloudConnected?: boolean;
 }
 
 export default function Sidebar({
@@ -35,7 +36,8 @@ export default function Sidebar({
   status,
   username,
   darkMode,
-  setDarkMode
+  setDarkMode,
+  isCloudConnected = false
 }: SidebarProps) {
   
   const menuItems = [
@@ -110,8 +112,24 @@ export default function Sidebar({
         })}
       </nav>
 
-      {/* Sidebar Footer with Theme Toggle */}
-      <div className="p-4 border-t border-slate-200 dark:border-slate-800/60">
+      {/* Sidebar Footer with Theme Toggle & Connection status */}
+      <div className="p-4 border-t border-slate-200 dark:border-slate-800/60 flex flex-col gap-2.5">
+        {/* Connection status badge */}
+        <div className="flex items-center justify-between px-3 py-2 bg-slate-100/50 dark:bg-slate-950/40 border border-slate-200/50 dark:border-slate-850/50 rounded-xl">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">KONEKSI DB</span>
+          {isCloudConnected ? (
+            <span className="inline-flex items-center gap-1 text-[9px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-500/5 px-2 py-0.5 rounded-md border border-emerald-500/10">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              CLOUD SYNC
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[9px] font-extrabold text-amber-600 dark:text-amber-500 bg-amber-500/10 dark:bg-amber-500/5 px-2 py-0.5 rounded-md border border-amber-500/10">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              OFFLINE (LOKAL)
+            </span>
+          )}
+        </div>
+
         <button
           onClick={() => setDarkMode(!darkMode)}
           className="flex items-center justify-center gap-3 w-full py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs font-semibold cursor-pointer transition-colors duration-200"

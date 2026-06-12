@@ -24,6 +24,7 @@ import {
 
 import { TransactionCode, KbArticle, DailyNote, ChecklistItem, TellerSettings } from '@/types';
 import { db } from '@/lib/database';
+import { supabase } from '@/lib/supabase';
 
 // Import UI sub-components
 import Sidebar from '@/components/Sidebar';
@@ -496,10 +497,17 @@ export default function RootPage() {
           </form>
 
           <div className="text-center border-t border-slate-800/60 pt-4 mt-2">
-            <p className="text-[10px] text-slate-500 font-medium flex items-center justify-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Mode Sinkronisasi Cloud Aktif
-            </p>
+            {supabase ? (
+              <p className="text-[10px] text-slate-500 font-medium flex items-center justify-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Mode Sinkronisasi Cloud Aktif
+              </p>
+            ) : (
+              <p className="text-[10px] text-slate-500 font-medium flex items-center justify-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                Mode Lokal (Offline)
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -517,6 +525,7 @@ export default function RootPage() {
         username={settings.username}
         darkMode={settings.darkMode}
         setDarkMode={(val) => handleSaveSettings({ ...settings, darkMode: val })}
+        isCloudConnected={!!supabase}
       />
 
       {/* Main Workspace */}
@@ -653,6 +662,8 @@ export default function RootPage() {
                 status={status}
                 importBackup={handleImportBackup}
                 exportBackup={handleExportBackup}
+                openingList={openingList}
+                closingList={closingList}
               />
             )}
           </div>

@@ -17,7 +17,7 @@ import {
   RefreshCcw,
   CheckCircle2
 } from 'lucide-react';
-import { TellerSettings, DailyNote, KbArticle } from '@/types';
+import { ChecklistItem, TellerSettings, DailyNote, KbArticle } from '@/types';
 
 interface SettingsProps {
   settings: TellerSettings;
@@ -27,6 +27,8 @@ interface SettingsProps {
   status: string;
   importBackup: (backupStr: string) => boolean;
   exportBackup: () => string;
+  openingList?: ChecklistItem[];
+  closingList?: ChecklistItem[];
 }
 
 export default function Settings({
@@ -36,7 +38,9 @@ export default function Settings({
   kbArticles,
   status,
   importBackup,
-  exportBackup
+  exportBackup,
+  openingList = [],
+  closingList = []
 }: SettingsProps) {
 
   const [activeSubTab, setActiveSubTab] = useState<'backup' | 'restore'>('backup');
@@ -78,12 +82,197 @@ export default function Settings({
     }
   };
 
-  const simulateExportFile = (type: string) => {
+  const handleExportFile = (type: 'pdf' | 'txt' | 'csv') => {
     setExportLoading(type);
     setTimeout(() => {
       setExportLoading(null);
-      alert(`Ekspor ${type} selesai. Berkas berhasil diunduh ke folder Downloads lokal Anda.`);
-    }, 1500);
+      
+      try {
+        if (type === 'csv') {
+          // Export Daily Notes to CSV
+          const csvHeaders = "Tanggal,Kategori,Judul,Catatan\n";
+          const csvRows = dailyNotes.map(n => {
+            const dateObj = new Date(n.date);
+            const dateStr = dateObj.toLocaleDateString('id-ID') + ' ' + dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            const escapedTitle = n.title.replace(/"/g, '""');
+            const escapedContent = n.content.replace(/"/g, '""');
+            return `"${dateStr}","${n.category}","${escapedTitle}","${escapedContent}"`;
+          }).join("\n");
+          
+          const blob = new Blob([csvHeaders + csvRows], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.setAttribute("href", url);
+          link.setAttribute("download", `catatan_jurnal_teller_${new Date().toISOString().split('T')[0]}.csv`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        } 
+        else if (type === 'txt') {
+          // Export Checklist to TXT
+          let textStr = `==================================================\n`;
+          textStr += `         LAPORAN CHECKLIST TELLER COPILOT          \n`;
+          textStr += `==================================================\n`;
+          textStr += `Nama Teller  : ${settings.username}\n`;
+          textStr += `Tanggal      : ${new Date().toLocaleDateString('id-ID')} ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}\n`;
+          textStr += `Status Hari  : ${status.toUpperCase()}\n`;
+          textStr += `==================================================\n\n`;
+
+          textStr += `[1] OPENING CHECKLIST PROGRESS\n`;
+          textStr += `--------------------------------------------------\n`;
+          openingList.forEach((item, idx) => {
+            const statusChar = item.checked ? '[✓]' : '[ ]';
+            textStr += `${String(idx + 1).padStart(2, ' ')}. ${statusChar} ${item.title}\n`;
+            if (item.note) textStr += `    * Catatan: ${item.note}\n`;
+          });
+          textStr += `\n`;
+
+          textStr += `[2] CLOSING CHECKLIST PROGRESS\n`;
+          textStr += `--------------------------------------------------\n`;
+          closingList.forEach((item, idx) => {
+            const statusChar = item.checked ? '[✓]' : '[ ]';
+            textStr += `${String(idx + 1).padStart(2, ' ')}. ${statusChar} ${item.title}\n`;
+            if (item.note) textStr += `    * Catatan: ${item.note}\n`;
+          });
+          textStr += `\n==================================================\n`;
+          textStr += `Dokumen ini dicetak otomatis dari sistem Teller Copilot.\n`;
+
+          const blob = new Blob([textStr], { type: 'text/plain;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.setAttribute("href", url);
+          link.setAttribute("download", `checklist_harian_teller_${new Date().toISOString().split('T')[0]}.txt`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
+        else if (type === 'pdf') {
+          // PDF/Print report
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(`
+              <html>
+                <head>
+                  <title>Laporan Harian Teller - ${settings.username}</title>
+                  <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #1e293b; background-color: #ffffff; }
+                    h1 { border-bottom: 3px solid #2563eb; padding-bottom: 12px; color: #1e3a8a; font-size: 24px; margin-top: 0; }
+                    .meta { margin-bottom: 30px; font-size: 13px; color: #64748b; background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; line-height: 1.6; }
+                    .meta strong { color: #334155; }
+                    .section { margin-bottom: 35px; page-break-inside: avoid; }
+                    .section h2 { font-size: 16px; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+                    th, td { border: 1px solid #e2e8f0; padding: 8px 12px; text-align: left; font-size: 11px; }
+                    th { background-color: #f1f5f9; font-weight: bold; color: #475569; }
+                    .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+                    .badge-done { background: #dcfce7; color: #15803d; }
+                    .badge-todo { background: #fee2e2; color: #b91c1c; }
+                    .note-text { color: #64748b; font-style: italic; margin-top: 2px; display: block; }
+                  </style>
+                </head>
+                <body>
+                  <h1>Laporan Harian Teller Copilot</h1>
+                  <div class="meta">
+                    <strong>Nama Teller (ID):</strong> ${settings.username}<br />
+                    <strong>Tanggal Cetak:</strong> ${new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}<br />
+                    <strong>Status Terakhir Hari Kerja:</strong> ${status.toUpperCase()}
+                  </div>
+                  
+                  <div class="section">
+                    <h2>Progres Opening Checklist (${openingList.filter(x => x.checked).length}/${openingList.length})</h2>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th style="width: 5%">No</th>
+                          <th style="width: 45%">Langkah Kegiatan</th>
+                          <th style="width: 35%">Catatan Detail</th>
+                          <th style="width: 15%">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        \${openingList.map((item, idx) => \`
+                          <tr>
+                            <td>\${idx + 1}</td>
+                            <td><strong>\${item.title}</strong></td>
+                            <td><span class="note-text">\${item.note || '-'}</span></td>
+                            <td><span class="badge \${item.checked ? 'badge-done' : 'badge-todo'}">\${item.checked ? 'SELESAI' : 'BELUM'}</span></td>
+                          </tr>
+                        \`).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div class="section">
+                    <h2>Progres Closing Checklist (${closingList.filter(x => x.checked).length}/${closingList.length})</h2>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th style="width: 5%">No</th>
+                          <th style="width: 45%">Langkah Kegiatan</th>
+                          <th style="width: 35%">Catatan Detail</th>
+                          <th style="width: 15%">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        \${closingList.map((item, idx) => \`
+                          <tr>
+                            <td>\${idx + 1}</td>
+                            <td><strong>\${item.title}</strong></td>
+                            <td><span class="note-text">\${item.note || '-'}</span></td>
+                            <td><span class="badge \${item.checked ? 'badge-done' : 'badge-todo'}">\${item.checked ? 'SELESAI' : 'BELUM'}</span></td>
+                          </tr>
+                        \`).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div class="section">
+                    <h2>Daftar Catatan Jurnal Harian (\${dailyNotes.length})</h2>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th style="width: 15%">Waktu</th>
+                          <th style="width: 15%">Kategori</th>
+                          <th style="width: 25%">Judul Ringkasan</th>
+                          <th style="width: 45%">Isi Catatan</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        \${dailyNotes.length === 0 ? \`<tr><td colspan="4" style="text-align: center; color: #94a3b8;">Belum ada catatan hari ini</td></tr>\` : 
+                          dailyNotes.map(n => {
+                            const dateObj = new Date(n.date);
+                            const formattedTime = dateObj.toLocaleDateString('id-ID') + ' ' + dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                            return \`
+                              <tr>
+                                <td>\${formattedTime}</td>
+                                <td><span style="font-weight: bold;">\${n.category}</span></td>
+                                <td><strong>\${n.title}</strong></td>
+                                <td style="white-space: pre-line;">\${n.content}</td>
+                              </tr>
+                            \`;
+                          }).join('')
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                  <script>
+                    window.onload = function() {
+                      window.print();
+                    };
+                  </script>
+                </body>
+              </html>
+            `);
+            printWindow.document.close();
+          }
+        }
+      } catch (e) {
+        console.error("Export failed:", e);
+        alert("Terjadi kesalahan saat mengekspor data: " + String(e));
+      }
+    }, 800);
   };
 
   return (
@@ -206,7 +395,7 @@ export default function Settings({
         <div className="flex flex-col gap-2">
           {/* PDF Tile */}
           <div 
-            onClick={() => simulateExportFile('PDF Laporan Harian')}
+            onClick={() => handleExportFile('pdf')}
             className="flex items-center justify-between p-3.5 border border-slate-100 dark:border-slate-800/60 rounded-xl hover:bg-slate-50/50 dark:hover:bg-slate-800/10 cursor-pointer transition"
           >
             <div className="flex items-center gap-4">
@@ -218,7 +407,7 @@ export default function Settings({
                 <p className="text-[10px] text-slate-400 mt-1">Unduh berkas PDF ringkasan seluruh status dan aktivitas teller.</p>
               </div>
             </div>
-            {exportLoading === 'PDF Laporan Harian' ? (
+            {exportLoading === 'pdf' ? (
               <span className="w-5 h-5 rounded-full border-2 border-rose-500 border-t-transparent animate-spin" />
             ) : (
               <ArrowDownToLine className="h-5 w-5 text-slate-400 hover:text-slate-600" />
@@ -227,7 +416,7 @@ export default function Settings({
 
           {/* Checklist Text Tile */}
           <div 
-            onClick={() => simulateExportFile('Checklist Harian (TXT)')}
+            onClick={() => handleExportFile('txt')}
             className="flex items-center justify-between p-3.5 border border-slate-100 dark:border-slate-800/60 rounded-xl hover:bg-slate-50/50 dark:hover:bg-slate-800/10 cursor-pointer transition"
           >
             <div className="flex items-center gap-4">
@@ -239,7 +428,7 @@ export default function Settings({
                 <p className="text-[10px] text-slate-400 mt-1">Unduh data checklist opening dan closing dalam format txt.</p>
               </div>
             </div>
-            {exportLoading === 'Checklist Harian (TXT)' ? (
+            {exportLoading === 'txt' ? (
               <span className="w-5 h-5 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
             ) : (
               <ArrowDownToLine className="h-5 w-5 text-slate-400 hover:text-slate-600" />
@@ -248,7 +437,7 @@ export default function Settings({
 
           {/* CSV Tapes Tile */}
           <div 
-            onClick={() => simulateExportFile('Catatan Harian (CSV)')}
+            onClick={() => handleExportFile('csv')}
             className="flex items-center justify-between p-3.5 border border-slate-100 dark:border-slate-800/60 rounded-xl hover:bg-slate-50/50 dark:hover:bg-slate-800/10 cursor-pointer transition"
           >
             <div className="flex items-center gap-4">
@@ -260,7 +449,7 @@ export default function Settings({
                 <p className="text-[10px] text-slate-400 mt-1">Unduh riwayat kesalahan, catatan supervisor, dan temuan ke CSV.</p>
               </div>
             </div>
-            {exportLoading === 'Catatan Harian (CSV)' ? (
+            {exportLoading === 'csv' ? (
               <span className="w-5 h-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
             ) : (
               <ArrowDownToLine className="h-5 w-5 text-slate-400 hover:text-slate-600" />
