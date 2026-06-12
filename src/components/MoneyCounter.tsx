@@ -88,8 +88,20 @@ export default function MoneyCounter({
     }
   }, []);
   
+  // Thousand Separator Helpers
+  const formatNumberWithDots = (val: string) => {
+    const clean = val.replace(/\D/g, '');
+    if (!clean) return '';
+    return new Intl.NumberFormat('id-ID').format(parseInt(clean));
+  };
+
+  const parseDotsToNumber = (val: string) => {
+    const clean = val.replace(/\D/g, '');
+    return parseFloat(clean) || 0;
+  };
+
   const getTab4Calculations = () => {
-    const total = parseFloat(tab4Input) || 0;
+    const total = parseDotsToNumber(tab4Input);
     const rounded = Math.round(total / 1000) * 1000;
     const sisa = Math.abs(total - rounded);
     
@@ -105,8 +117,8 @@ export default function MoneyCounter({
   const [systemInput, setSystemInput] = useState('');
   const [physicalInput, setPhysicalInput] = useState('');
 
-  const systemCashVal = parseFloat(systemInput) || 0;
-  const physicalCashVal = parseFloat(physicalInput) || 0;
+  const systemCashVal = parseDotsToNumber(systemInput);
+  const physicalCashVal = parseDotsToNumber(physicalInput);
   const difference = physicalCashVal - systemCashVal;
 
   const handleSaveLog = () => {
@@ -331,10 +343,10 @@ export default function MoneyCounter({
                 <div className="relative flex items-center border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 rounded-xl overflow-hidden focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all">
                   <span className="px-4 py-3 bg-slate-100 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-400">Rp</span>
                   <input
-                    type="number"
+                    type="text"
                     value={tab4Input}
-                    onChange={(e) => setTab4Input(e.target.value)}
-                    placeholder="Contoh: 1250475"
+                    onChange={(e) => setTab4Input(formatNumberWithDots(e.target.value))}
+                    placeholder="Contoh: 1.250.475"
                     className="w-full px-4 py-3 bg-transparent text-slate-900 dark:text-slate-100 font-bold text-sm outline-none"
                   />
                 </div>
@@ -391,9 +403,9 @@ export default function MoneyCounter({
                   <div className="relative flex items-center border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 rounded-xl overflow-hidden focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all">
                     <span className="px-4 py-3 bg-slate-100 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-400">Rp</span>
                     <input
-                      type="number"
+                      type="text"
                       value={systemInput}
-                      onChange={(e) => setSystemInput(e.target.value)}
+                      onChange={(e) => setSystemInput(formatNumberWithDots(e.target.value))}
                       placeholder="Masukkan nominal sistem"
                       className="w-full px-4 py-3 bg-transparent text-slate-900 dark:text-slate-100 font-bold text-sm outline-none"
                     />
@@ -406,9 +418,9 @@ export default function MoneyCounter({
                   <div className="relative flex items-center border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 rounded-xl overflow-hidden focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all">
                     <span className="px-4 py-3 bg-slate-100 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-400">Rp</span>
                     <input
-                      type="number"
+                      type="text"
                       value={physicalInput}
-                      onChange={(e) => setPhysicalInput(e.target.value)}
+                      onChange={(e) => setPhysicalInput(formatNumberWithDots(e.target.value))}
                       placeholder="Masukkan nominal fisik laci"
                       className="w-full px-4 py-3 bg-transparent text-slate-900 dark:text-slate-100 font-bold text-sm outline-none"
                     />
@@ -418,7 +430,7 @@ export default function MoneyCounter({
                   {tab1Total > 0 && (
                     <button
                       type="button"
-                      onClick={() => setPhysicalInput(tab1Total.toString())}
+                      onClick={() => setPhysicalInput(new Intl.NumberFormat('id-ID').format(tab1Total))}
                       className="text-left text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer transition-all mt-1"
                     >
                       💡 Gunakan hasil hitung Kalkulator Pecahan ({formatRupiah(tab1Total)})

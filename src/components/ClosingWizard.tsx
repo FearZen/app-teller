@@ -40,6 +40,19 @@ export default function ClosingWizard({
 
   const cashDiff = physicalCash - systemCash;
 
+  // Local string state for formatted values
+  const [localSystemInput, setLocalSystemInput] = useState(() => systemCash ? new Intl.NumberFormat('id-ID').format(systemCash) : '');
+  const [localPhysicalInput, setLocalPhysicalInput] = useState(() => physicalCash ? new Intl.NumberFormat('id-ID').format(physicalCash) : '');
+
+  // Keep in sync with props changes
+  useEffect(() => {
+    setLocalSystemInput(systemCash ? new Intl.NumberFormat('id-ID').format(systemCash) : '');
+  }, [systemCash]);
+
+  useEffect(() => {
+    setLocalPhysicalInput(physicalCash ? new Intl.NumberFormat('id-ID').format(physicalCash) : '');
+  }, [physicalCash]);
+
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [touchStartIndex, setTouchStartIndex] = useState<number | null>(null);
   const [touchTargetIndex, setTouchTargetIndex] = useState<number | null>(null);
@@ -290,9 +303,14 @@ export default function ClosingWizard({
                           <div className="relative flex items-center border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl overflow-hidden focus-within:border-blue-500 transition-all">
                             <span className="px-3 py-2 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-400 border-r border-slate-200 dark:border-slate-800">Rp</span>
                             <input
-                              type="number"
-                              value={systemCash || ''}
-                              onChange={(e) => setSystemCash(parseFloat(e.target.value) || 0)}
+                              type="text"
+                              value={localSystemInput}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const cleanVal = val.replace(/\D/g, '');
+                                setLocalSystemInput(cleanVal ? new Intl.NumberFormat('id-ID').format(parseInt(cleanVal)) : '');
+                                setSystemCash(parseFloat(cleanVal) || 0);
+                              }}
                               placeholder="0"
                               className="w-full px-3 py-2 bg-transparent text-slate-900 dark:text-slate-100 font-bold text-xs outline-none"
                             />
@@ -304,9 +322,14 @@ export default function ClosingWizard({
                           <div className="relative flex items-center border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl overflow-hidden focus-within:border-blue-500 transition-all">
                             <span className="px-3 py-2 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-400 border-r border-slate-200 dark:border-slate-800">Rp</span>
                             <input
-                              type="number"
-                              value={physicalCash || ''}
-                              onChange={(e) => setPhysicalCash(parseFloat(e.target.value) || 0)}
+                              type="text"
+                              value={localPhysicalInput}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const cleanVal = val.replace(/\D/g, '');
+                                setLocalPhysicalInput(cleanVal ? new Intl.NumberFormat('id-ID').format(parseInt(cleanVal)) : '');
+                                setPhysicalCash(parseFloat(cleanVal) || 0);
+                              }}
                               placeholder="0"
                               className="w-full px-3 py-2 bg-transparent text-slate-900 dark:text-slate-100 font-bold text-xs outline-none"
                             />
